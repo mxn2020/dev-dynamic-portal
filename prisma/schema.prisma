@@ -15,57 +15,155 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Application data models (not auth-related)
-model Post {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  title     String
-  content   String?
-  published Boolean  @default(false)
-  authorId  String   // References Better Auth user ID (not a Prisma relation)
-  slug      String   @unique
-  tags      String[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  comments  Comment[]
+// Energy Source Management
+model EnergySource {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  name            String
+  type            String   // "solar", "wind", "hydro", "battery"
+  capacity        Float    // Maximum capacity in kWh
+  location        String?  // Physical location description
+  installDate     DateTime
+  status          String   @default("active") // "active", "maintenance", "inactive"
+  efficiency      Float    @default(0.0) // Current efficiency percentage
+  maintenanceDate DateTime?
+  hotelId         String   // References Better Auth user ID (hotel owner)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Relations
+  productions     EnergyProduction[]
+  maintenanceRecords MaintenanceRecord[]
 }
 
-model Comment {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  content   String
-  authorId  String   // References Better Auth user ID
-  postId    String   @db.ObjectId
-  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+// Energy Production Tracking
+model EnergyProduction {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  sourceId      String   @db.ObjectId
+  source        EnergySource @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  timestamp     DateTime @default(now())
+  energyProduced Float   // kWh produced in this time period
+  efficiency    Float    // Efficiency percentage at time of production
+  weatherConditions String? // Weather conditions affecting production
+  hotelId       String   // References Better Auth user ID
+  createdAt     DateTime @default(now())
 }
 
-model Category {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  name        String   @unique
-  description String?
-  color       String?  @default("#3b82f6")
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+// Hotel Energy Consumption
+model EnergyConsumption {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  hotelId       String   // References Better Auth user ID
+  timestamp     DateTime @default(now())
+  energyConsumed Float   // kWh consumed
+  department    String?  // "rooms", "kitchen", "lobby", "spa", etc.
+  peakHours     Boolean  @default(false)
+  cost          Float?   // Cost of energy if purchased from grid
+  createdAt     DateTime @default(now())
 }
 
-// Example model for user preferences (linked to Better Auth users)
-model UserPreference {
+// Customer Management for Energy Sales
+model Customer {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  name          String
+  type          String   // "hotel", "residential", "commercial", "industrial"
+  contactEmail  String
+  contactPhone  String?
+  address       String
+  contractStart DateTime
+  contractEnd   DateTime?
+  ratePerKwh    Float    // Price per kWh
+  status        String   @default("active") // "active", "suspended", "terminated"
+  hotelId       String   // References Better Auth user ID (energy seller)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  // Relations
+  energySales   EnergySale[]
+}
+
+// Energy Sales Transactions
+model EnergySale {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  customerId    String   @db.ObjectId
+  customer      Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  saleDate      DateTime @default(now())
+  energyAmount  Float    // kWh sold
+  pricePerKwh   Float    // Price at time of sale
+  totalRevenue  Float    // Total amount earned
+  paymentStatus String   @default("pending") // "pending", "paid", "overdue"
+  paymentDate   DateTime?
+  invoiceNumber String?  @unique
+  hotelId       String   // References Better Auth user ID
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+// Maintenance Records for Energy Sources
+model MaintenanceRecord {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  sourceId      String   @db.ObjectId
+  source        EnergySource @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  maintenanceDate DateTime
+  type          String   // "routine", "repair", "upgrade", "inspection"
+  description   String
+  cost          Float?
+  performedBy   String   // Technician or company name
+  nextScheduled DateTime?
+  status        String   @default("completed") // "scheduled", "in-progress", "completed"
+  hotelId       String   // References Better Auth user ID
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+// Energy Storage Management
+model EnergyStorage {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  name          String
+  type          String   // "battery", "pumped-hydro", "compressed-air"
+  capacity      Float    // Maximum storage capacity in kWh
+  currentLevel  Float    @default(0.0) // Current energy stored
+  efficiency    Float    @default(0.95) // Storage efficiency percentage
+  location      String?
+  installDate   DateTime
+  status        String   @default("active")
+  hotelId       String   // References Better Auth user ID
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+// Energy Trading Market Prices
+model MarketPrice {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  timestamp     DateTime @default(now())
+  region        String   // Geographic region
+  pricePerKwh   Float    // Current market price
+  demandLevel   String   // "low", "medium", "high", "peak"
+  source        String   // Data source (grid operator, energy exchange)
+  createdAt     DateTime @default(now())
+}
+
+// Hotel Energy Preferences and Settings
+model HotelEnergySettings {
+  id                    String   @id @default(auto()) @map("_id") @db.ObjectId
+  hotelId               String   @unique // References Better Auth user ID
+  autoSellExcess        Boolean  @default(true)
+  minimumBatteryLevel   Float    @default(20.0) // Minimum battery level to maintain
+  preferredSalePrice    Float?   // Preferred price per kWh for sales
+  maxDailyConsumption   Float?   // Alert threshold for daily consumption
+  sustainabilityGoals   String?  // JSON string of sustainability targets
+  notificationSettings String?  // JSON string of notification preferences
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+// Environmental Impact Tracking
+model EnvironmentalImpact {
   id                String   @id @default(auto()) @map("_id") @db.ObjectId
-  userId            String   @unique // Better Auth user ID
-  theme             String   @default("light") // "light" | "dark" | "system"
-  emailNotifications Boolean  @default(true)
-  language          String   @default("en")
-  timezone          String   @default("UTC")
+  hotelId           String   // References Better Auth user ID
+  date              DateTime @default(now())
+  co2Saved          Float    // CO2 emissions saved in kg
+  treesEquivalent   Float    // Equivalent number of trees planted
+  coalAvoided       Float    // Equivalent coal consumption avoided in kg
+  waterSaved        Float?   // Water saved in liters (for some renewable sources)
+  energyProduced    Float    // Total renewable energy produced in kWh
   createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-}
-
-// Example model for application settings
-model AppSetting {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  key       String   @unique
-  value     String
-  type      String   @default("string") // "string" | "number" | "boolean" | "json"
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 }
