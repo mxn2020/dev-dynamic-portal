@@ -12,7 +12,9 @@ export default {
   			'gradient-y': 'gradient-y 15s ease infinite',
   			'gradient-xy': 'gradient-xy 15s ease infinite',
   			'accordion-down': 'accordion-down 0.2s ease-out',
-  			'accordion-up': 'accordion-up 0.2s ease-out'
+  			'accordion-up': 'accordion-up 0.2s ease-out',
+  			'pulse-green': 'pulse-green 2s ease-in-out infinite',
+  			'energy-flow': 'energy-flow 3s ease-in-out infinite'
   		},
   		keyframes: {
   			'gradient-y': {
@@ -59,6 +61,29 @@ export default {
   				},
   				to: {
   					height: '0'
+  				}
+  			},
+  			'pulse-green': {
+  				'0%, 100%': {
+  					opacity: '1',
+  					transform: 'scale(1)'
+  				},
+  				'50%': {
+  					opacity: '0.8',
+  					transform: 'scale(1.05)'
+  				}
+  			},
+  			'energy-flow': {
+  				'0%': {
+  					transform: 'translateX(-100%)',
+  					opacity: '0'
+  				},
+  				'50%': {
+  					opacity: '1'
+  				},
+  				'100%': {
+  					transform: 'translateX(100%)',
+  					opacity: '0'
   				}
   			}
   		},
@@ -117,7 +142,27 @@ export default {
   				'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
   				border: 'hsl(var(--sidebar-border))',
   				ring: 'hsl(var(--sidebar-ring))'
+  			},
+  			// Renewable Energy Theme Colors
+  			energy: {
+  				solar: '#f59e0b',
+  				wind: '#3b82f6',
+  				hydro: '#06b6d4',
+  				battery: '#10b981',
+  				grid: '#6b7280'
+  			},
+  			sustainability: {
+  				green: '#059669',
+  				eco: '#16a34a',
+  				nature: '#65a30d',
+  				earth: '#84cc16'
   			}
+  		},
+  		backgroundImage: {
+  			'energy-gradient': 'linear-gradient(135deg, #059669 0%, #16a34a 25%, #65a30d 50%, #84cc16 75%, #10b981 100%)',
+  			'solar-gradient': 'linear-gradient(135deg, #f59e0b 0%, #f97316 50%, #ea580c 100%)',
+  			'wind-gradient': 'linear-gradient(135deg, #3b82f6 0%, #2563eb 50%, #1d4ed8 100%)',
+  			'eco-radial': 'radial-gradient(circle at center, #059669 0%, #064e3b 100%)'
   		}
   	}
   },
